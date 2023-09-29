@@ -51,6 +51,7 @@ const (
 	MsgNodeAnnouncement                    = 257
 	MsgChannelUpdate                       = 258
 	MsgAnnounceSignatures                  = 259
+	MsgAnnounceSignatures2                 = 260
 	MsgQueryShortChanIDs                   = 261
 	MsgReplyShortChanIDsEnd                = 262
 	MsgQueryChannelRange                   = 263
@@ -152,6 +153,8 @@ func (t MessageType) String() string {
 		return "ClosingComplete"
 	case MsgClosingSig:
 		return "ClosingSig"
+	case MsgAnnounceSignatures2:
+		return "MsgAnnounceSignatures2"
 	default:
 		return "<unknown>"
 	}
@@ -266,6 +269,8 @@ func makeEmptyMessage(msgType MessageType) (Message, error) {
 		msg = &ClosingComplete{}
 	case MsgClosingSig:
 		msg = &ClosingSig{}
+	case MsgAnnounceSignatures2:
+		msg = &AnnounceSignatures2{}
 	default:
 		// If the message is not within our custom range and has not
 		// specifically been overridden, return an unknown message.
