@@ -129,7 +129,7 @@ func (t MessageType) String() string {
 	case MsgChannelUpdate:
 		return "ChannelUpdate1"
 	case MsgNodeAnnouncement:
-		return "NodeAnnouncement"
+		return "NodeAnnouncement1"
 	case MsgPing:
 		return "Ping"
 	case MsgAnnounceSignatures:
@@ -245,7 +245,7 @@ func makeEmptyMessage(msgType MessageType) (Message, error) {
 	case MsgChannelUpdate:
 		msg = &ChannelUpdate1{}
 	case MsgNodeAnnouncement:
-		msg = &NodeAnnouncement{}
+		msg = &NodeAnnouncement1{}
 	case MsgPing:
 		msg = &Ping{}
 	case MsgAnnounceSignatures:
