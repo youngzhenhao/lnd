@@ -250,9 +250,11 @@ func (r *mockGraphSource) GetChannelByID(chanID lnwire.ShortChannelID) (
 		}, nil, nil, channeldb.ErrZombieEdge
 	}
 
+	chanInfoCP := chanInfo.Copy()
+
 	edges := r.edges[chanID.ToUint64()]
 	if len(edges) == 0 {
-		return chanInfo, nil, nil, nil
+		return chanInfoCP, nil, nil, nil
 	}
 
 	var edge1 models.ChannelEdgePolicy
@@ -265,7 +267,7 @@ func (r *mockGraphSource) GetChannelByID(chanID lnwire.ShortChannelID) (
 		edge2 = edges[1]
 	}
 
-	return chanInfo, edge1, edge2, nil
+	return chanInfoCP, edge1, edge2, nil
 }
 
 func (r *mockGraphSource) FetchLightningNode(
