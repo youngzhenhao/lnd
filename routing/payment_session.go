@@ -410,7 +410,7 @@ func (p *paymentSession) UpdateAdditionalEdge(msg *lnwire.ChannelUpdate1,
 	pubKey *btcec.PublicKey, policy *models.CachedEdgePolicy) bool {
 
 	// Validate the message signature.
-	if err := VerifyChannelUpdateSignature(msg, pubKey); err != nil {
+	if err := msg.VerifySig(pubKey); err != nil {
 		log.Errorf(
 			"Unable to validate channel update signature: %v", err,
 		)

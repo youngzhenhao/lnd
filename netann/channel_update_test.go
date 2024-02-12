@@ -11,7 +11,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnwallet"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/netann"
-	"github.com/lightningnetwork/lnd/routing"
 )
 
 type mockSigner struct {
@@ -182,9 +181,7 @@ func TestUpdateDisableFlag(t *testing.T) {
 
 			// Finally, validate the signature using the router's
 			// verification logic.
-			err = routing.VerifyChannelUpdateSignature(
-				newUpdate, pubKey,
-			)
+			err = newUpdate.VerifySig(pubKey)
 			if err != nil {
 				t.Fatalf("channel update failed to "+
 					"validate: %v", err)
