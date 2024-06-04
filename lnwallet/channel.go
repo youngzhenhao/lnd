@@ -1353,6 +1353,9 @@ type LightningChannel struct {
 	// custom channel variants.
 	auxSigner fn.Option[AuxSigner]
 
+	// auxResolver...
+	auxResolver fn.Option[AuxContractResolver]
+
 	// Capacity is the total capacity of this channel.
 	Capacity btcutil.Amount
 
@@ -1416,8 +1419,9 @@ type channelOpts struct {
 	localNonce  *musig2.Nonces
 	remoteNonce *musig2.Nonces
 
-	leafStore fn.Option[AuxLeafStore]
-	auxSigner fn.Option[AuxSigner]
+	leafStore   fn.Option[AuxLeafStore]
+	auxSigner   fn.Option[AuxSigner]
+	auxResolver fn.Option[AuxContractResolver]
 
 	skipNonceInit bool
 }
@@ -1460,6 +1464,13 @@ func WithLeafStore(store AuxLeafStore) ChannelOpt {
 func WithAuxSigner(signer AuxSigner) ChannelOpt {
 	return func(o *channelOpts) {
 		o.auxSigner = fn.Some[AuxSigner](signer)
+	}
+}
+
+// WithAuxResolver...
+func WithAuxResolver(resolver AuxContractResolver) ChannelOpt {
+	return func(o *channelOpts) {
+		o.auxResolver = fn.Some[AuxContractResolver](resolver)
 	}
 }
 
@@ -1507,6 +1518,7 @@ func NewLightningChannel(signer input.Signer,
 		Signer:            signer,
 		leafStore:         opts.leafStore,
 		auxSigner:         opts.auxSigner,
+		auxResolver:       opts.auxResolver,
 		sigPool:           sigPool,
 		currentHeight:     localCommit.CommitHeight,
 		remoteCommitChain: newCommitmentChain(),
