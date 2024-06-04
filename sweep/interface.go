@@ -3,6 +3,8 @@ package sweep
 import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/lnwallet"
 )
 
@@ -56,4 +58,14 @@ type Wallet interface {
 	// which could be e.g. btcd, bitcoind, neutrino, or another consensus
 	// service.
 	BackEnd() string
+}
+
+// SweepOutput...
+type SweepOutput = wire.TxOut
+
+// AuxSweeper...
+type AuxSweeper interface {
+	// DeriveSweepAddr...
+	DeriveSweepAddr(inputs []input.Input,
+		change lnwallet.AddrWithKey) fn.Result[fn.Option[SweepOutput]]
 }
