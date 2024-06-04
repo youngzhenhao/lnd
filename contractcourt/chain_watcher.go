@@ -192,6 +192,11 @@ type chainWatcherConfig struct {
 
 	// auxLeafStore can be used to fetch information for custom channels.
 	auxLeafStore fn.Option[lnwallet.AuxLeafStore]
+
+	// auxResolver...
+	auxResolver fn.Option[lnwallet.AuxContractResolver]
+
+	// TODO(roasbeef): always set in config ^
 }
 
 // chainWatcher is a system that's assigned to every active channel. The duty
@@ -1193,8 +1198,8 @@ func (c *chainWatcher) dispatchRemoteForceClose(
 	// materials required to let each subscriber sweep the funds in the
 	// channel on-chain.
 	uniClose, err := lnwallet.NewUnilateralCloseSummary(
-		c.cfg.chanState, c.cfg.signer, commitSpend,
-		remoteCommit, commitPoint, c.cfg.auxLeafStore,
+		c.cfg.chanState, c.cfg.signer, commitSpend, remoteCommit,
+		commitPoint, c.cfg.auxLeafStore, c.cfg.auxResolver,
 	)
 	if err != nil {
 		return err

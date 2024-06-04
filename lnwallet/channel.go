@@ -7015,6 +7015,11 @@ type CommitOutputResolution struct {
 	// that pay to the local party within the broadcast commitment
 	// transaction.
 	MaturityDelay uint32
+
+	// ResolutionBlob is a blob used for aux channels that permits a
+	// spender of the output to properly resolve it in the case of a force
+	// close.
+	ResolutionBlob fn.Option[tlv.Blob]
 }
 
 // UnilateralCloseSummary describes the details of a detected unilateral
@@ -7072,7 +7077,8 @@ type UnilateralCloseSummary struct {
 func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 	signer input.Signer, commitSpend *chainntnfs.SpendDetail,
 	remoteCommit channeldb.ChannelCommitment, commitPoint *btcec.PublicKey,
-	leafStore fn.Option[AuxLeafStore]) (*UnilateralCloseSummary, error) {
+	leafStore fn.Option[AuxLeafStore],
+	auxResolver fn.Option[AuxContractResolver]) (*UnilateralCloseSummary, error) {
 
 	// First, we'll generate the commitment point and the revocation point
 	// so we can re-construct the HTLC state and also our payment key.
@@ -7172,6 +7178,26 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 			},
 			MaturityDelay: maturityDelay,
 		}
+
+		// At this point, we'll check to see if we need any extra
+		// resolution data for this output.
+		resolveBlob := fn.MapOptionZ(
+			auxResolver,
+			func(a AuxContractResolver) fn.Result[tlv.Blob] {
+				return a.ResolveContract(ResolutionReq{
+					ChanPoint:  chanState.FundingOutpoint,
+					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					Type:       CommitNoDelay,
+				})
+			},
+		)
+		if err := resolveBlob.Err(); err != nil {
+			return nil, fmt.Errorf("unable to aux resolve: %w", err)
+		}
+
+		commitResolution.ResolutionBlob = resolveBlob.Option()
+
+		// TODO(roasbeef): call into AuxContractResolver for into to make blob
 
 		// For taproot channels, we'll need to set some additional
 		// fields to ensure the output can be swept.
