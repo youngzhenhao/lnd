@@ -3,6 +3,7 @@ package lnwallet
 import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
@@ -27,6 +28,18 @@ type ResolutionReq struct {
 
 	// Type...
 	Type ContractType
+
+	// CommitTx...
+	CommitTx *wire.MsgTx
+
+	// ContractPoint...
+	ContractPoint wire.OutPoint
+
+	// SignDesc...
+	SignDesc input.SignDescriptor
+
+	// KeyRing...
+	KeyRing *CommitmentKeyRing
 }
 
 // AuxContractResolver...

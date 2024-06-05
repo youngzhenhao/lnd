@@ -7179,26 +7179,6 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 			MaturityDelay: maturityDelay,
 		}
 
-		// At this point, we'll check to see if we need any extra
-		// resolution data for this output.
-		resolveBlob := fn.MapOptionZ(
-			auxResolver,
-			func(a AuxContractResolver) fn.Result[tlv.Blob] {
-				return a.ResolveContract(ResolutionReq{
-					ChanPoint:  chanState.FundingOutpoint,
-					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
-					Type:       CommitNoDelay,
-				})
-			},
-		)
-		if err := resolveBlob.Err(); err != nil {
-			return nil, fmt.Errorf("unable to aux resolve: %w", err)
-		}
-
-		commitResolution.ResolutionBlob = resolveBlob.Option()
-
-		// TODO(roasbeef): call into AuxContractResolver for into to make blob
-
 		// For taproot channels, we'll need to set some additional
 		// fields to ensure the output can be swept.
 		//
@@ -7219,6 +7199,27 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 				return nil, err
 			}
 		}
+
+		// At this point, we'll check to see if we need any extra
+		// resolution data for this output.
+		resolveBlob := fn.MapOptionZ(
+			auxResolver,
+			func(a AuxContractResolver) fn.Result[tlv.Blob] {
+				return a.ResolveContract(ResolutionReq{
+					ChanPoint:     chanState.FundingOutpoint,
+					CommitBlob:    chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					Type:          CommitNoDelay,
+					CommitTx:      commitTxBroadcast,
+					ContractPoint: *selfPoint,
+					SignDesc:      commitResolution.SelfOutputSignDesc,
+				})
+			},
+		)
+		if err := resolveBlob.Err(); err != nil {
+			return nil, fmt.Errorf("unable to aux resolve: %w", err)
+		}
+
+		commitResolution.ResolutionBlob = resolveBlob.Option()
 	}
 
 	closeSummary := channeldb.ChannelCloseSummary{
