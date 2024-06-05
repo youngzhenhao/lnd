@@ -68,4 +68,7 @@ type AuxSweeper interface {
 	// DeriveSweepAddr...
 	DeriveSweepAddr(inputs []input.Input,
 		change lnwallet.AddrWithKey) fn.Result[fn.Option[SweepOutput]]
+
+	// NotifyBroadcast...
+	NotifyBroadcast(req *BumpRequest, tx *wire.MsgTx) error
 }

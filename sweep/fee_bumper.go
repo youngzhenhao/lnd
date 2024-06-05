@@ -554,6 +554,15 @@ func (t *TxPublisher) broadcast(requestID uint64) (*BumpResult, error) {
 	log.Debugf("Publishing sweep tx %v, num_inputs=%v, height=%v",
 		txid, len(tx.TxIn), t.currentHeight.Load())
 
+	// Before we go to broadcast, we'll nnotify the aux sweeper, if it's
+	// present of this new broadcast attempt.
+	err := fn.MapOptionZ(t.cfg.AuxSweeper, func(aux AuxSweeper) error {
+		return aux.NotifyBroadcast(record.req, tx)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to notify aux sweeper: %w", err)
+	}
+
 	// Set the event, and change it to TxFailed if the wallet fails to
 	// publish it.
 	event := TxPublished
@@ -561,7 +570,7 @@ func (t *TxPublisher) broadcast(requestID uint64) (*BumpResult, error) {
 	// Publish the sweeping tx with customized label. If the publish fails,
 	// this error will be saved in the `BumpResult` and it will be removed
 	// from being monitored.
-	err := t.cfg.Wallet.PublishTransaction(
+	err = t.cfg.Wallet.PublishTransaction(
 		tx, labels.MakeLabel(labels.LabelTypeSweepTransaction, nil),
 	)
 	if err != nil {
