@@ -2534,6 +2534,11 @@ type BreachRetribution struct {
 	// breaching commitment transaction. This allows downstream clients to
 	// have access to the public keys used in the scripts.
 	KeyRing *CommitmentKeyRing
+
+	// ResolutionBlob is a blob used for aux channels that permits a
+	// spender of the output to properly resolve it in the case of a force
+	// close.
+	ResolutionBlob fn.Option[tlv.Blob]
 }
 
 // NewBreachRetribution creates a new fully populated BreachRetribution for the
@@ -2545,7 +2550,8 @@ type BreachRetribution struct {
 // the required fields then ErrRevLogDataMissing will be returned.
 func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 	breachHeight uint32, spendTx *wire.MsgTx,
-	leafStore fn.Option[AuxLeafStore]) (*BreachRetribution, error) {
+	leafStore fn.Option[AuxLeafStore],
+	auxResolver fn.Option[AuxContractResolver]) (*BreachRetribution, error) {
 
 	// Query the on-disk revocation log for the snapshot which was recorded
 	// at this particular state num. Based on whether a legacy revocation
@@ -2703,6 +2709,27 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 				return nil, err
 			}
 		}
+
+		// At this point, we'll check to see if we need any extra
+		// resolution data for this output.
+		resolveBlob := fn.MapOptionZ(
+			auxResolver,
+			func(a AuxContractResolver) fn.Result[tlv.Blob] {
+				return a.ResolveContract(ResolutionReq{
+					ChanPoint:  chanState.FundingOutpoint,
+					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					Type:       input.TaprootRemoteCommitSpend,
+					CommitTx:   spendTx,
+					SignDesc:   *br.LocalOutputSignDesc,
+					KeyRing:    keyRing,
+				})
+			},
+		)
+		if err := resolveBlob.Err(); err != nil {
+			return nil, fmt.Errorf("unable to aux resolve: %w", err)
+		}
+
+		br.ResolutionBlob = resolveBlob.Option()
 	}
 
 	// Similarly, if their balance exceeds the remote party's dust limit,
@@ -2750,6 +2777,28 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 				return nil, err
 			}
 		}
+
+		// At this point, we'll check to see if we need any extra
+		// resolution data for this output.
+		resolveBlob := fn.MapOptionZ(
+			auxResolver,
+			func(a AuxContractResolver) fn.Result[tlv.Blob] {
+				return a.ResolveContract(ResolutionReq{
+					ChanPoint:  chanState.FundingOutpoint,
+					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					Type:       input.TaprootCommitmentRevoke,
+					CommitTx:   spendTx,
+					SignDesc:   *br.RemoteOutputSignDesc,
+					KeyRing:    keyRing,
+					CsvDelay:   fn.Some(theirDelay),
+				})
+			},
+		)
+		if err := resolveBlob.Err(); err != nil {
+			return nil, fmt.Errorf("unable to aux resolve: %w", err)
+		}
+
+		br.ResolutionBlob = resolveBlob.Option()
 	}
 
 	// Finally, with all the necessary data constructed, we can pad the
