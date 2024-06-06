@@ -7208,10 +7208,11 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 				return a.ResolveContract(ResolutionReq{
 					ChanPoint:     chanState.FundingOutpoint,
 					CommitBlob:    chanState.RemoteCommitment.CustomBlob, //nolint:lll
-					Type:          CommitNoDelay,
+					Type:          input.TaprootRemoteCommitSpend,
 					CommitTx:      commitTxBroadcast,
 					ContractPoint: *selfPoint,
 					SignDesc:      commitResolution.SelfOutputSignDesc,
+					KeyRing:       keyRing,
 				})
 			},
 		)
@@ -8074,7 +8075,7 @@ func (lc *LightningChannel) ForceClose() (*LocalForceCloseSummary, error) {
 	localCommitment := lc.channelState.LocalCommitment
 	summary, err := NewLocalForceCloseSummary(
 		lc.channelState, lc.Signer, commitTx,
-		localCommitment.CommitHeight, lc.leafStore,
+		localCommitment.CommitHeight, lc.leafStore, lc.auxResolver,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to gen force close "+
@@ -8092,7 +8093,8 @@ func (lc *LightningChannel) ForceClose() (*LocalForceCloseSummary, error) {
 // transaction corresponding to localCommit.
 func NewLocalForceCloseSummary(chanState *channeldb.OpenChannel,
 	signer input.Signer, commitTx *wire.MsgTx, stateNum uint64,
-	leafStore fn.Option[AuxLeafStore]) (*LocalForceCloseSummary, error) {
+	leafStore fn.Option[AuxLeafStore],
+	auxResolver fn.Option[AuxContractResolver]) (*LocalForceCloseSummary, error) {
 
 	// Re-derive the original pkScript for to-self output within the
 	// commitment transaction. We'll need this to find the corresponding
@@ -8112,8 +8114,6 @@ func NewLocalForceCloseSummary(chanState *channeldb.OpenChannel,
 		commitPoint, true, chanState.ChanType,
 		&chanState.LocalChanCfg, &chanState.RemoteChanCfg,
 	)
-
-	// TODO(roasbeef): fetch aux leave
 
 	var leaseExpiry uint32
 	if chanState.ChanType.HasLeaseExpiration() {
@@ -8201,6 +8201,29 @@ func NewLocalForceCloseSummary(chanState *channeldb.OpenChannel,
 				return nil, err
 			}
 		}
+
+		// At this point, we'll check to see if we need any extra
+		// resolution data for this output.
+		resolveBlob := fn.MapOptionZ(
+			auxResolver,
+			func(a AuxContractResolver) fn.Result[tlv.Blob] {
+				return a.ResolveContract(ResolutionReq{
+					ChanPoint:     chanState.FundingOutpoint,
+					CommitBlob:    chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					Type:          input.TaprootLocalCommitSpend,
+					CommitTx:      commitTx,
+					ContractPoint: commitResolution.SelfOutPoint,
+					SignDesc:      commitResolution.SelfOutputSignDesc,
+					KeyRing:       keyRing,
+					CsvDelay:      fn.Some(csvTimeout),
+				})
+			},
+		)
+		if err := resolveBlob.Err(); err != nil {
+			return nil, fmt.Errorf("unable to aux resolve: %w", err)
+		}
+
+		commitResolution.ResolutionBlob = resolveBlob.Option()
 	}
 
 	// Once the delay output has been found (if it exists), then we'll also

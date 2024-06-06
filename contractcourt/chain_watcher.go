@@ -1106,7 +1106,7 @@ func (c *chainWatcher) dispatchLocalForceClose(
 
 	forceClose, err := lnwallet.NewLocalForceCloseSummary(
 		c.cfg.chanState, c.cfg.signer, commitSpend.SpendingTx, stateNum,
-		c.cfg.auxLeafStore,
+		c.cfg.auxLeafStore, c.cfg.auxResolver,
 	)
 	if err != nil {
 		return err

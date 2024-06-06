@@ -7,17 +7,6 @@ import (
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
-// ContractType...
-type ContractType uint8
-
-const (
-	// CommitNoDelay...
-	CommitNoDelay = iota
-
-	// CommitDelay...
-	CommitDelay = iota
-)
-
 // ResolutionReq..
 type ResolutionReq struct {
 	// ChanPoint...
@@ -27,7 +16,7 @@ type ResolutionReq struct {
 	CommitBlob fn.Option[tlv.Blob]
 
 	// Type...
-	Type ContractType
+	Type input.WitnessType
 
 	// CommitTx...
 	CommitTx *wire.MsgTx
