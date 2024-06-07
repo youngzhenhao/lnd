@@ -2716,12 +2716,14 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 			auxResolver,
 			func(a AuxContractResolver) fn.Result[tlv.Blob] {
 				return a.ResolveContract(ResolutionReq{
-					ChanPoint:  chanState.FundingOutpoint,
-					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
-					Type:       input.TaprootRemoteCommitSpend,
-					CommitTx:   spendTx,
-					SignDesc:   *br.LocalOutputSignDesc,
-					KeyRing:    keyRing,
+					ChanPoint:   chanState.FundingOutpoint,
+					CommitBlob:  chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					FundingBlob: chanState.CustomBlob,
+					Type:        input.TaprootRemoteCommitSpend,
+					CommitTx:    spendTx,
+					SignDesc:    *br.LocalOutputSignDesc,
+					KeyRing:     keyRing,
+					CommitFee:   chanState.RemoteCommitment.CommitFee,
 				})
 			},
 		)
@@ -2784,13 +2786,15 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 			auxResolver,
 			func(a AuxContractResolver) fn.Result[tlv.Blob] {
 				return a.ResolveContract(ResolutionReq{
-					ChanPoint:  chanState.FundingOutpoint,
-					CommitBlob: chanState.RemoteCommitment.CustomBlob, //nolint:lll
-					Type:       input.TaprootCommitmentRevoke,
-					CommitTx:   spendTx,
-					SignDesc:   *br.RemoteOutputSignDesc,
-					KeyRing:    keyRing,
-					CsvDelay:   fn.Some(theirDelay),
+					ChanPoint:   chanState.FundingOutpoint,
+					CommitBlob:  chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					FundingBlob: chanState.CustomBlob,
+					Type:        input.TaprootCommitmentRevoke,
+					CommitTx:    spendTx,
+					SignDesc:    *br.RemoteOutputSignDesc,
+					KeyRing:     keyRing,
+					CsvDelay:    fn.Some(theirDelay),
+					CommitFee:   chanState.RemoteCommitment.CommitFee,
 				})
 			},
 		)
@@ -7257,11 +7261,13 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 				return a.ResolveContract(ResolutionReq{
 					ChanPoint:     chanState.FundingOutpoint,
 					CommitBlob:    chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					FundingBlob:   chanState.CustomBlob,
 					Type:          input.TaprootRemoteCommitSpend,
 					CommitTx:      commitTxBroadcast,
 					ContractPoint: *selfPoint,
 					SignDesc:      commitResolution.SelfOutputSignDesc,
 					KeyRing:       keyRing,
+					CommitFee:     chanState.RemoteCommitment.CommitFee,
 				})
 			},
 		)
@@ -8258,13 +8264,15 @@ func NewLocalForceCloseSummary(chanState *channeldb.OpenChannel,
 			func(a AuxContractResolver) fn.Result[tlv.Blob] {
 				return a.ResolveContract(ResolutionReq{
 					ChanPoint:     chanState.FundingOutpoint,
-					CommitBlob:    chanState.RemoteCommitment.CustomBlob, //nolint:lll
+					CommitBlob:    chanState.LocalCommitment.CustomBlob, //nolint:lll
+					FundingBlob:   chanState.CustomBlob,
 					Type:          input.TaprootLocalCommitSpend,
 					CommitTx:      commitTx,
 					ContractPoint: commitResolution.SelfOutPoint,
 					SignDesc:      commitResolution.SelfOutputSignDesc,
 					KeyRing:       keyRing,
 					CsvDelay:      fn.Some(csvTimeout),
+					CommitFee:     chanState.LocalCommitment.CommitFee,
 				})
 			},
 		)

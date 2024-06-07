@@ -1,6 +1,7 @@
 package lnwallet
 
 import (
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/input"
@@ -15,11 +16,17 @@ type ResolutionReq struct {
 	// CommitBlob...
 	CommitBlob fn.Option[tlv.Blob]
 
+	// FundingBlob...
+	FundingBlob fn.Option[tlv.Blob]
+
 	// Type...
 	Type input.WitnessType
 
 	// CommitTx...
 	CommitTx *wire.MsgTx
+
+	// CommitFee...
+	CommitFee btcutil.Amount
 
 	// ContractPoint...
 	ContractPoint wire.OutPoint
