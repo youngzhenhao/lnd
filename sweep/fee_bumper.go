@@ -1260,17 +1260,16 @@ func prepareSweepTx(inputs []input.Input, changePkScript lnwallet.AddrWithKey,
 	// we'll attempt to see if we have any other change outputs we'll need
 	// to add to the sweep transaction.
 	changePkScripts := [][]byte{changePkScript.DeliveryAddress}
-	extraChangeOutRes := fn.MapOptionZ(
+	extraChangeOut := fn.MapOptionZ(
 		auxSweeper,
-		func(aux AuxSweeper) fn.Result[fn.Option[SweepOutput]] {
+		func(aux AuxSweeper) fn.Result[SweepOutput] {
 			return aux.DeriveSweepAddr(inputs, changePkScript)
 		},
 	)
-	extraChangeOut, err := extraChangeOutRes.Unpack()
-	if err != nil {
+	if err := extraChangeOut.Err(); err != nil {
 		return 0, noChange, noLocktime, err
 	}
-	extraChangeOut.WhenSome(func(o SweepOutput) {
+	extraChangeOut.WhenResult(func(o SweepOutput) {
 		changePkScripts = append(changePkScripts, o.PkScript)
 	})
 
@@ -1298,7 +1297,7 @@ func prepareSweepTx(inputs []input.Input, changePkScript lnwallet.AddrWithKey,
 
 	// If we have an extra change output, then we'll add it as a required
 	// output amt.
-	extraChangeOut.WhenSome(func(o SweepOutput) {
+	extraChangeOut.WhenResult(func(o SweepOutput) {
 		requiredOutput += btcutil.Amount(o.Value)
 	})
 
@@ -1351,7 +1350,7 @@ func prepareSweepTx(inputs []input.Input, changePkScript lnwallet.AddrWithKey,
 
 	changeOuts := make([]SweepOutput, 0, 2)
 
-	extraChangeOut.WhenSome(func(o SweepOutput) {
+	extraChangeOut.WhenResult(func(o SweepOutput) {
 		changeOuts = append(changeOuts, o)
 	})
 
