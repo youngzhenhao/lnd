@@ -8,47 +8,50 @@ import (
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
-// ResolutionReq..
+// ResolutionReq is used to ask an outside sub-system for additional
+// information needed to resolve a contract.
 type ResolutionReq struct {
-	// ChanPoint...
+	// ChanPoint is the channel point of the channel that we are trying to
+	// resolve.
 	ChanPoint wire.OutPoint
 
-	// CommitBlob...
+	// CommitBlob is an optional commit blob for the channel.
 	CommitBlob fn.Option[tlv.Blob]
 
-	// FundingBlob...
+	// FundingBlob is an optional funding blob for the channel.
 	FundingBlob fn.Option[tlv.Blob]
 
-	// Type...
+	// Type is the type of the witness that we are trying to resolve.
 	Type input.WitnessType
 
-	// CommitTx...
+	// CommitTx is the force close commitment transaction.
 	CommitTx *wire.MsgTx
 
-	// CommitFee...
+	// CommitFee is the fee that was paid for the commitment transaction.
 	CommitFee btcutil.Amount
 
-	// ContractPoint...
+	// ContractPoint is the outpoint of the contract we're trying to
+	// resolve.
 	ContractPoint wire.OutPoint
 
-	// SignDesc...
+	// SignDesc is the sign descriptor for the contract.
 	SignDesc input.SignDescriptor
 
-	// KeyRing...
+	// KeyRing is the key ring for the channel.
 	KeyRing *CommitmentKeyRing
 
-	// CsvDelay...
+	// CsvDelay is the CSV delay for the outpoint.
 	CsvDelay fn.Option[uint32]
 
-	// CltvDelay...
+	// CltvDelay is the CLTV delay for the outpoint.
 	CltvDelay fn.Option[uint32]
 }
 
-// AuxContractResolver...
+// AuxContractResolver is an interface that is used to resolve contracts that
+// may need additional outside information to resolve correctly.
 type AuxContractResolver interface {
-	// ResolveContract...
-	//
-	// * cisc or risc?
-	// * for each of given method, etc?
+	// ResolveContract is called to resolve a contract that needs
+	// additional information to resolve properly. If no extra information
+	// is required, a nil Result error is returned.
 	ResolveContract(ResolutionReq) fn.Result[tlv.Blob]
 }
