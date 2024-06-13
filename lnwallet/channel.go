@@ -7268,6 +7268,7 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel,
 					ContractPoint: *selfPoint,
 					SignDesc:      commitResolution.SelfOutputSignDesc,
 					KeyRing:       keyRing,
+					CsvDelay:      fn.Some(maturityDelay),
 					CommitFee:     chanState.RemoteCommitment.CommitFee,
 				})
 			},
