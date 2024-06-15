@@ -8,6 +8,21 @@ import (
 	"github.com/lightningnetwork/lnd/tlv"
 )
 
+// CloseType is an enum that represents the type of close that we are trying to
+// resolve.
+type CloseType uint8
+
+const (
+	// LocalForceClose represents a local force close.
+	LocalForceClose CloseType = iota
+
+	// RemoteForceClose represents a remote force close.
+	RemoteForceClose
+
+	// BreachClose represents a breach by the remote party.
+	Breach
+)
+
 // ResolutionReq is used to ask an outside sub-system for additional
 // information needed to resolve a contract.
 type ResolutionReq struct {
@@ -23,6 +38,9 @@ type ResolutionReq struct {
 
 	// Type is the type of the witness that we are trying to resolve.
 	Type input.WitnessType
+
+	// CloseType is the type of close that we are trying to resolve.
+	CloseType CloseType
 
 	// CommitTx is the force close commitment transaction.
 	CommitTx *wire.MsgTx
@@ -40,8 +58,8 @@ type ResolutionReq struct {
 	// KeyRing is the key ring for the channel.
 	KeyRing *CommitmentKeyRing
 
-	// CsvDelay is the CSV delay for the outpoint.
-	CsvDelay fn.Option[uint32]
+	// CsvDelay is the CSV delay for the local output for this commitment.
+	CsvDelay uint32
 
 	// CltvDelay is the CLTV delay for the outpoint.
 	CltvDelay fn.Option[uint32]
