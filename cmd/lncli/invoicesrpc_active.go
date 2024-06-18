@@ -69,7 +69,7 @@ func settleInvoice(ctx *cli.Context) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("unable to parse preimage: %v", err)
+		return fmt.Errorf("unable to parse preimage: %w", err)
 	}
 
 	invoice := &invoicesrpc.SettleInvoiceMsg{
@@ -123,7 +123,7 @@ func cancelInvoice(ctx *cli.Context) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("unable to parse preimage: %v", err)
+		return fmt.Errorf("unable to parse preimage: %w", err)
 	}
 
 	invoice := &invoicesrpc.CancelInvoiceMsg{
@@ -184,6 +184,14 @@ var addHoldInvoiceCommand = cli.Command{
 				"specified, an expiry of " +
 				"86400 seconds (24 hours) is implied.",
 		},
+		cli.Uint64Flag{
+			Name: "cltv_expiry_delta",
+			Usage: "The minimum CLTV delta to use for the final " +
+				"hop. If this is set to 0, the default value " +
+				"is used. The default value for " +
+				"cltv_expiry_delta is configured by the " +
+				"'bitcoin.timelockdelta' option.",
+		},
 		cli.BoolFlag{
 			Name: "private",
 			Usage: "encode routing hints in the invoice with " +
@@ -212,7 +220,7 @@ func addHoldInvoice(ctx *cli.Context) error {
 
 	hash, err := hex.DecodeString(args.First())
 	if err != nil {
-		return fmt.Errorf("unable to parse hash: %v", err)
+		return fmt.Errorf("unable to parse hash: %w", err)
 	}
 
 	args = args.Tail()
@@ -223,13 +231,14 @@ func addHoldInvoice(ctx *cli.Context) error {
 	if !ctx.IsSet("amt") && !ctx.IsSet("amt_msat") && args.Present() {
 		amt, err = strconv.ParseInt(args.First(), 10, 64)
 		if err != nil {
-			return fmt.Errorf("unable to decode amt argument: %v", err)
+			return fmt.Errorf("unable to decode amt argument: %w",
+				err)
 		}
 	}
 
 	descHash, err = hex.DecodeString(ctx.String("description_hash"))
 	if err != nil {
-		return fmt.Errorf("unable to parse description_hash: %v", err)
+		return fmt.Errorf("unable to parse description_hash: %w", err)
 	}
 
 	invoice := &invoicesrpc.AddHoldInvoiceRequest{
@@ -240,6 +249,7 @@ func addHoldInvoice(ctx *cli.Context) error {
 		DescriptionHash: descHash,
 		FallbackAddr:    ctx.String("fallback_addr"),
 		Expiry:          ctx.Int64("expiry"),
+		CltvExpiry:      ctx.Uint64("cltv_expiry_delta"),
 		Private:         ctx.Bool("private"),
 	}
 

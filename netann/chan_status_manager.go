@@ -195,7 +195,7 @@ func (m *ChanStatusManager) start() error {
 		// have been pruned from the channel graph but not yet from our
 		// set of channels. We'll skip it as we can't determine its
 		// initial state.
-		case err == channeldb.ErrEdgeNotFound:
+		case errors.Is(err, channeldb.ErrEdgeNotFound):
 			log.Warnf("Unable to find channel policies for %v, "+
 				"skipping. This is typical if the channel is "+
 				"in the process of closing.", c.FundingOutpoint)
@@ -225,7 +225,9 @@ func (m *ChanStatusManager) start() error {
 // Stop safely shuts down the ChanStatusManager.
 func (m *ChanStatusManager) Stop() error {
 	m.stopped.Do(func() {
-		log.Info("Channel Status Manager shutting down")
+		log.Info("Channel Status Manager shutting down...")
+		defer log.Debug("Channel Status Manager shutdown complete")
+
 		close(m.quit)
 		m.wg.Wait()
 	})
@@ -389,7 +391,7 @@ func (m *ChanStatusManager) processEnableRequest(outpoint wire.OutPoint,
 
 	// Quickly check to see if the requested channel is active within the
 	// htlcswitch and return an error if it isn't.
-	chanID := lnwire.NewChanIDFromOutPoint(&outpoint)
+	chanID := lnwire.NewChanIDFromOutPoint(outpoint)
 	if !m.cfg.IsChannelActive(chanID) {
 		return ErrEnableInactiveChan
 	}
@@ -529,7 +531,7 @@ func (m *ChanStatusManager) markPendingInactiveChannels() {
 		// If our bookkeeping shows the channel as active, sample the
 		// htlcswitch to see if it believes the link is also active. If
 		// so, we will skip marking it as ChanStatusPendingDisabled.
-		chanID := lnwire.NewChanIDFromOutPoint(&c.FundingOutpoint)
+		chanID := lnwire.NewChanIDFromOutPoint(c.FundingOutpoint)
 		if m.cfg.IsChannelActive(chanID) {
 			continue
 		}
@@ -578,7 +580,7 @@ func (m *ChanStatusManager) disableInactiveChannels() {
 			// that the channel has been closed. Thus we remove the
 			// outpoint from the set of tracked outpoints to prevent
 			// further attempts.
-			if err == channeldb.ErrEdgeNotFound {
+			if errors.Is(err, channeldb.ErrEdgeNotFound) {
 				log.Debugf("Removing channel(%v) from "+
 					"consideration for passive disabling",
 					outpoint)

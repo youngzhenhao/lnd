@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -129,7 +128,7 @@ func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		err = ioutil.WriteFile(macFilePath, invoicesMacBytes, 0644)
+		err = os.WriteFile(macFilePath, invoicesMacBytes, 0644)
 		if err != nil {
 			_ = os.Remove(macFilePath)
 			return nil, nil, err
@@ -235,7 +234,9 @@ func (s *Server) SubscribeSingleInvoice(req *SubscribeSingleInvoiceRequest,
 		return err
 	}
 
-	invoiceClient, err := s.cfg.InvoiceRegistry.SubscribeSingleInvoice(hash)
+	invoiceClient, err := s.cfg.InvoiceRegistry.SubscribeSingleInvoice(
+		updateStream.Context(), hash,
+	)
 	if err != nil {
 		return err
 	}
@@ -284,7 +285,7 @@ func (s *Server) SettleInvoice(ctx context.Context,
 		return nil, err
 	}
 
-	err = s.cfg.InvoiceRegistry.SettleHodlInvoice(preimage)
+	err = s.cfg.InvoiceRegistry.SettleHodlInvoice(ctx, preimage)
 	if err != nil && !errors.Is(err, invoices.ErrInvoiceAlreadySettled) {
 		return nil, err
 	}
@@ -303,7 +304,7 @@ func (s *Server) CancelInvoice(ctx context.Context,
 		return nil, err
 	}
 
-	err = s.cfg.InvoiceRegistry.CancelInvoice(paymentHash)
+	err = s.cfg.InvoiceRegistry.CancelInvoice(ctx, paymentHash)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +431,9 @@ func (s *Server) LookupInvoiceV2(ctx context.Context,
 
 	// Attempt to locate the invoice, returning a nice "not found" error if
 	// we can't find it in the database.
-	invoice, err := s.cfg.InvoiceRegistry.LookupInvoiceByRef(invoiceRef)
+	invoice, err := s.cfg.InvoiceRegistry.LookupInvoiceByRef(
+		ctx, invoiceRef,
+	)
 	switch {
 	case errors.Is(err, invoices.ErrInvoiceNotFound):
 		return nil, status.Error(codes.NotFound, err.Error())
