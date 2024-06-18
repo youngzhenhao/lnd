@@ -1,6 +1,3 @@
-//go:build watchtowerrpc
-// +build watchtowerrpc
-
 package watchtowerrpc
 
 import (

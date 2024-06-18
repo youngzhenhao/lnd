@@ -1,6 +1,3 @@
-//go:build neutrinorpc
-// +build neutrinorpc
-
 package neutrinorpc
 
 import (

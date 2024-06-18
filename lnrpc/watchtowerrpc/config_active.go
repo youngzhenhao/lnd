@@ -1,6 +1,3 @@
-//go:build watchtowerrpc
-// +build watchtowerrpc
-
 package watchtowerrpc
 
 // Config is the primary configuration struct for the watchtower RPC server. It

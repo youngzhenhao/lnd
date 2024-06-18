@@ -1,6 +1,3 @@
-//go:build autopilotrpc
-// +build autopilotrpc
-
 package autopilotrpc
 
 import (

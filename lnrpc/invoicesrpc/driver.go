@@ -1,6 +1,3 @@
-//go:build invoicesrpc
-// +build invoicesrpc
-
 package invoicesrpc
 
 import (

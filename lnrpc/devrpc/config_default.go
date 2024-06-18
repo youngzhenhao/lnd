@@ -1,7 +1,7 @@
-//go:build !dev
-// +build !dev
+//go:build dev
+// +build dev
 
 package devrpc
 
 // Config is empty for non-devrpc builds.
-type Config struct{}
+type Config1 struct{}

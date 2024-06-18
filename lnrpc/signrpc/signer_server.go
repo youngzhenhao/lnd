@@ -1,6 +1,3 @@
-//go:build signrpc
-// +build signrpc
-
 package signrpc
 
 import (

@@ -1,6 +1,3 @@
-//go:build walletrpc
-// +build walletrpc
-
 package walletrpc
 
 import (

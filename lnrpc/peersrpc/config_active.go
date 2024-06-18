@@ -1,6 +1,3 @@
-//go:build peersrpc
-// +build peersrpc
-
 package peersrpc
 
 import (
